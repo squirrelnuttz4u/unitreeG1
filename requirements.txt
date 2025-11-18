@@ -1,10 +1,20 @@
 # Unitree G1 Windows Control Application Dependencies
 
-# Unitree SDK (G1-specific)
-# Note: Install from PyPI or from source
-# PyPI: pip install unitree-sdk2py
-# Source: https://github.com/unitreerobotics/unitree_sdk2_python
-unitree-sdk2py>=1.0.0
+# Unitree SDK (G1-specific) - OPTIONAL
+# WARNING: This package does NOT work on native Windows!
+#
+# Windows users have 3 options:
+# 1. Use WSL2 (recommended) - Install SDK inside WSL2 Ubuntu
+# 2. Run in simulation mode - Skip SDK installation entirely
+# 3. Build from source (advanced) - Requires CMake, C++ tools
+#
+# Linux/WSL2 users can install from source:
+#   git clone https://github.com/unitreerobotics/unitree_sdk2_python.git
+#   cd unitree_sdk2_python
+#   pip install -e .
+#
+# If SDK is not installed, the application will run in simulation mode.
+# unitree-sdk2py>=1.0.0  # Commented out - install manually or use simulation mode
 
 # GUI Framework
 customtkinter>=5.2.0

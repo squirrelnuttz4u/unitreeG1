@@ -9,6 +9,54 @@ This guide explains how to set up your Windows PC to connect to and control a ph
 - Robot controller (for initial activation)
 - Python 3.8+ installed
 
+## ⚠️ Important: Windows SDK Installation
+
+**The Unitree SDK has limited native Windows support.** The SDK requires `cyclonedds==0.10.2`, which doesn't have pre-built Windows wheels and requires compilation from source.
+
+### Recommended Approach for Windows Users
+
+**Option 1: WSL2 (Windows Subsystem for Linux) - RECOMMENDED** ✅
+
+This is Unitree's recommended method for Windows users:
+
+1. **Install WSL2**:
+   ```powershell
+   # In PowerShell (Administrator)
+   wsl --install
+   ```
+
+2. **Restart your computer**
+
+3. **Install the SDK in WSL2**:
+   ```bash
+   # Open Ubuntu from Start Menu
+   cd ~
+   git clone https://github.com/unitreerobotics/unitree_sdk2_python.git
+   cd unitree_sdk2_python
+   pip3 install -e .
+   ```
+
+4. **Run the application from WSL2**:
+   ```bash
+   # Clone the app repository in WSL2
+   python3 main.py
+   ```
+
+**Option 2: Simulation Mode (No SDK Required)** ✅
+
+Test the application without a physical robot:
+- Just run `python main.py` without installing the SDK
+- The app will automatically run in simulation mode
+- Perfect for UI testing and development
+
+**Option 3: Native Windows (Advanced)** ⚠️
+
+Only if you must run natively on Windows:
+- Requires Visual C++ Build Tools
+- Requires CMake
+- Complex setup - not recommended
+- See "Advanced Windows Installation" section below
+
 ## Network Configuration
 
 ### G1 Network Details
@@ -57,39 +105,35 @@ The Unitree G1 robot creates its own network with these default settings:
 
 ## SDK Installation
 
-### 1. Install Visual C++ Build Tools (Required for Windows)
+### For WSL2 Users (Recommended)
 
-Download and install Microsoft C++ Build Tools:
-https://visualstudio.microsoft.com/visual-cpp-build-tools/
+If you're using WSL2 (recommended), the installation is straightforward:
 
-Or install Visual Studio with C++ development tools.
-
-### 2. Install Unitree SDK2 Python
-
-```cmd
-# Install from PyPI
-pip install unitree-sdk2py
-
-# OR install from source (latest version)
+```bash
+# In WSL2 Ubuntu terminal
+cd ~
 git clone https://github.com/unitreerobotics/unitree_sdk2_python.git
 cd unitree_sdk2_python
-pip install -e .
+pip3 install -e .
+
+# Install application dependencies
+cd ~/unitreeG1  # Or wherever you cloned the app
+pip3 install -r requirements.txt
 ```
 
-### 3. Install Application Dependencies
+### For Simulation Mode (No SDK)
+
+If you just want to test the UI without a physical robot:
 
 ```cmd
+# In Windows Command Prompt
 cd unitreeG1
 pip install -r requirements.txt
+# Skip the unitree SDK - simulation mode will activate automatically
+python main.py
 ```
 
-### 4. Install CycloneDDS (Required)
-
-The SDK uses CycloneDDS for communication:
-
-```cmd
-pip install cyclonedds
-```
+The SDK will not install on native Windows via pip because `cyclonedds==0.10.2` lacks Windows wheels.
 
 ## Network Interface Configuration
 

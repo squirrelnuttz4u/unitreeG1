@@ -60,7 +60,9 @@ A comprehensive Windows desktop application for controlling the Unitree G1 EDU h
 
 ## Installation
 
-**Important**: For connecting to a physical G1 robot, see the detailed [Hardware Setup Guide](HARDWARE_SETUP.md) first.
+**🪟 Windows Users**: See [WINDOWS_INSTALL.md](WINDOWS_INSTALL.md) for Windows-specific instructions (SDK has limited Windows support).
+
+**🤖 Physical Robot**: See [HARDWARE_SETUP.md](HARDWARE_SETUP.md) for network setup and robot activation.
 
 ### 1. Clone Repository
 
@@ -75,16 +77,11 @@ cd unitreeG1
 pip install -r requirements.txt
 ```
 
-### 3. Install Unitree SDK2 (Required for Physical Robot)
+### 3. Install Unitree SDK2 (Optional - For Physical Robot)
 
-The Unitree SDK2 Python package is required to control a physical G1 robot:
+**⚠️ Windows Users**: The SDK does NOT work on native Windows. See [WINDOWS_INSTALL.md](WINDOWS_INSTALL.md) for your options.
 
-```bash
-# Install from PyPI
-pip install unitree-sdk2py
-```
-
-**Or install from source (for latest version)**:
+**Linux/WSL2 Users** can install from source:
 
 ```bash
 git clone https://github.com/unitreerobotics/unitree_sdk2_python.git
@@ -92,7 +89,7 @@ cd unitree_sdk2_python
 pip install -e .
 ```
 
-**Note**: The application will run in simulation mode if the SDK is not installed. This is perfect for testing the UI without a robot.
+**Note**: The application will automatically run in **simulation mode** if the SDK is not installed. This is perfect for testing the UI without a robot!
 
 ### 4. Install Additional Dependencies (Windows)
 
@@ -417,6 +414,7 @@ This project is provided as-is for educational and development purposes.
 ## Documentation
 
 - **[README.md](README.md)** - Main documentation (this file)
+- **[WINDOWS_INSTALL.md](WINDOWS_INSTALL.md)** - Windows installation guide (START HERE for Windows!)
 - **[HARDWARE_SETUP.md](HARDWARE_SETUP.md)** - Physical robot setup guide
 - **[QUICKSTART.md](QUICKSTART.md)** - 5-minute quick start
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history
