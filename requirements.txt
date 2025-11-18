@@ -1,0 +1,32 @@
+# Unitree G1 Windows Control Application Dependencies
+
+# Unitree SDK
+# Note: Install unitree_sdk2_python from: pip install unitree_sdk2py
+unitree_sdk2py>=1.0.0
+
+# GUI Framework
+customtkinter>=5.2.0
+Pillow>=10.0.0
+
+# Video Processing
+opencv-python>=4.8.0
+numpy>=1.24.0
+
+# Audio Processing
+pyaudio>=0.2.13
+sounddevice>=0.4.6
+pyttsx3>=2.90
+
+# Speech Recognition
+SpeechRecognition>=3.10.0
+
+# Network Communication
+cyclonedds>=0.10.0
+
+# 3D Visualization (for SLAM)
+matplotlib>=3.7.0
+open3d>=0.17.0
+
+# Additional Utilities
+scipy>=1.11.0
+pyserial>=3.5

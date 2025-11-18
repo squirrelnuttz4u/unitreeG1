@@ -1,0 +1,43 @@
+{
+  "robot": {
+    "ip_address": "192.168.123.164",
+    "connection_timeout": 5,
+    "retry_attempts": 3
+  },
+  "video": {
+    "camera_index": 0,
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "rtsp_port": 8554
+  },
+  "slam": {
+    "map_size": 100,
+    "resolution": 0.1,
+    "update_rate": 10
+  },
+  "motion": {
+    "default_walk_speed": 0.3,
+    "default_run_speed": 0.6,
+    "max_velocity": 1.5,
+    "max_yaw_rate": 2.0
+  },
+  "audio": {
+    "tts_enabled": true,
+    "stt_enabled": true,
+    "tts_rate": 150,
+    "tts_volume": 0.9,
+    "voice_language": "en-US"
+  },
+  "ui": {
+    "theme": "dark",
+    "window_width": 1400,
+    "window_height": 900,
+    "video_update_rate": 30
+  },
+  "logging": {
+    "level": "INFO",
+    "log_to_file": false,
+    "log_file": "unitree_g1.log"
+  }
+}
