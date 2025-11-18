@@ -1,10 +1,11 @@
-# Unitree G1 Windows Control Application
+# Unitree G1 Control Application
 
-A comprehensive Windows desktop application for controlling the Unitree G1 EDU humanoid robot, featuring video streaming, SLAM visualization, motion control, gesture commands, and voice recognition.
+A comprehensive desktop application for controlling the Unitree G1 EDU humanoid robot, featuring video streaming, SLAM visualization, motion control, gesture commands, and voice recognition.
 
 ![Unitree G1](https://img.shields.io/badge/Unitree-G1%20EDU-blue)
 ![Python](https://img.shields.io/badge/Python-3.8%2B-green)
-![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey)
+![Ubuntu](https://img.shields.io/badge/Ubuntu-20.04%20LTS-orange)
 
 ## Features
 
@@ -49,20 +50,34 @@ A comprehensive Windows desktop application for controlling the Unitree G1 EDU h
 ## Requirements
 
 ### Hardware
-- **Computer**: Windows 10/11 PC
-- **RAM**: 8GB minimum, 16GB recommended
+- **Computer**: Windows 10/11 PC or Ubuntu 20.04+ Linux
+- **RAM**: 4GB minimum, 8GB recommended
 - **Network**: WiFi or Ethernet connection to robot
 - **Optional**: Microphone for voice control
 
 ### Software
 - **Python**: 3.8 or higher
-- **Unitree G1 EDU Robot**: With SDK v2 support
+- **Unitree G1 EDU Robot**: With SDK v2 support (optional for simulation mode)
 
 ## Installation
 
-**🪟 Windows Users**: See [WINDOWS_INSTALL.md](WINDOWS_INSTALL.md) for Windows-specific instructions (SDK has limited Windows support).
+**Choose your platform:**
 
-**🤖 Physical Robot**: See [HARDWARE_SETUP.md](HARDWARE_SETUP.md) for network setup and robot activation.
+- **🐧 Ubuntu 20.04**: See [UBUNTU_INSTALL.md](UBUNTU_INSTALL.md) - BEST option for native SDK support
+- **🪟 Windows 10/11**: See [WINDOWS_INSTALL.md](WINDOWS_INSTALL.md) - Requires WSL2 for robot control
+- **🤖 Physical Robot**: See [HARDWARE_SETUP.md](HARDWARE_SETUP.md) for network setup and activation
+
+### Quick Install (Ubuntu 20.04)
+
+```bash
+# One-line installation
+curl -sSL https://raw.githubusercontent.com/yourusername/unitreeG1/main/install_ubuntu.sh | bash
+
+# Or manual installation
+git clone https://github.com/yourusername/unitreeG1.git
+cd unitreeG1
+./install_ubuntu.sh
+```
 
 ### 1. Clone Repository
 
@@ -128,12 +143,19 @@ Video feed settings can be adjusted in `src/robot/video_feed.py`:
 
 ### Starting the Application
 
+#### Ubuntu/Linux:
+```bash
+./start_ubuntu.sh
+# Or directly:
+python3 main.py
+```
+
 #### Windows:
 ```bash
 python main.py
 ```
 
-Or double-click `start.bat` (if created)
+Or double-click `start.bat`
 
 ### Quick Start Guide
 
@@ -414,7 +436,8 @@ This project is provided as-is for educational and development purposes.
 ## Documentation
 
 - **[README.md](README.md)** - Main documentation (this file)
-- **[WINDOWS_INSTALL.md](WINDOWS_INSTALL.md)** - Windows installation guide (START HERE for Windows!)
+- **[UBUNTU_INSTALL.md](UBUNTU_INSTALL.md)** - Ubuntu 20.04 installation guide ⭐ RECOMMENDED
+- **[WINDOWS_INSTALL.md](WINDOWS_INSTALL.md)** - Windows installation guide
 - **[HARDWARE_SETUP.md](HARDWARE_SETUP.md)** - Physical robot setup guide
 - **[QUICKSTART.md](QUICKSTART.md)** - 5-minute quick start
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history
