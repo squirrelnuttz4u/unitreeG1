@@ -1,0 +1,31 @@
+# Minimal Requirements - Core Dependencies Only
+# Use this if you're having trouble with the full requirements.txt
+
+# GUI Framework (REQUIRED)
+customtkinter>=5.2.0
+Pillow>=10.0.0
+
+# Video Processing (REQUIRED)
+opencv-python>=4.8.0
+numpy>=1.24.0
+
+# SLAM Visualization (REQUIRED)
+matplotlib>=3.7.0
+
+# Speech Recognition (OPTIONAL - for voice control)
+SpeechRecognition>=3.10.0
+
+# Text-to-Speech (OPTIONAL - for voice control)
+pyttsx3>=2.90
+
+# Network Communication (OPTIONAL - only needed with real robot + SDK)
+# cyclonedds>=0.10.0
+
+# Audio (OPTIONAL - only for voice control, may fail on some systems)
+# pyaudio>=0.2.13
+# sounddevice>=0.4.6
+
+# Advanced features (OPTIONAL - not needed for basic operation)
+# open3d>=0.17.0  # 3D visualization - often fails to install
+# scipy>=1.11.0   # Scientific computing
+# pyserial>=3.5   # Serial communication

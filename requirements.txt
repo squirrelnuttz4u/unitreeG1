@@ -24,10 +24,13 @@ Pillow>=10.0.0
 opencv-python>=4.8.0
 numpy>=1.24.0
 
-# Audio Processing
-pyaudio>=0.2.13
-sounddevice>=0.4.6
-pyttsx3>=2.90
+# Audio Processing - For voice control (optional)
+# NOTE: On Ubuntu, install system package first: sudo apt install portaudio19-dev
+# On Windows, pyaudio may fail - use: pip install pipwin && pipwin install pyaudio
+# If audio fails to install, the app will still work without voice control
+pyaudio>=0.2.13  # May fail on some systems - optional for voice control
+sounddevice>=0.4.6  # Alternative audio library
+pyttsx3>=2.90  # Text-to-speech
 
 # Speech Recognition
 SpeechRecognition>=3.10.0
@@ -35,10 +38,16 @@ SpeechRecognition>=3.10.0
 # Network Communication
 cyclonedds>=0.10.0
 
-# 3D Visualization (for SLAM)
+# 2D Visualization (for SLAM) - REQUIRED
 matplotlib>=3.7.0
-open3d>=0.17.0
 
-# Additional Utilities
-scipy>=1.11.0
-pyserial>=3.5
+# 3D Visualization (for SLAM) - OPTIONAL
+# NOTE: open3d is OPTIONAL and only needed for advanced 3D point cloud visualization
+# The app works fine without it using matplotlib for 2D SLAM visualization
+# If you get 404 errors, skip this package - it's not critical
+# open3d>=0.17.0  # Commented out - install only if needed
+
+# Additional Utilities - OPTIONAL
+# scipy is optional, only used for advanced features
+# scipy>=1.11.0  # Commented out - install only if needed
+# pyserial>=3.5  # Commented out - install only if needed
