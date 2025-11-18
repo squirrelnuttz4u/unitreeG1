@@ -60,6 +60,8 @@ A comprehensive Windows desktop application for controlling the Unitree G1 EDU h
 
 ## Installation
 
+**Important**: For connecting to a physical G1 robot, see the detailed [Hardware Setup Guide](HARDWARE_SETUP.md) first.
+
 ### 1. Clone Repository
 
 ```bash
@@ -73,21 +75,24 @@ cd unitreeG1
 pip install -r requirements.txt
 ```
 
-### 3. Install Unitree SDK2
+### 3. Install Unitree SDK2 (Required for Physical Robot)
 
-The Unitree SDK2 Python package needs to be installed separately:
+The Unitree SDK2 Python package is required to control a physical G1 robot:
 
 ```bash
-pip install unitree_sdk2py
+# Install from PyPI
+pip install unitree-sdk2py
 ```
 
-**Note**: If the SDK is not available via pip, you may need to install from source:
+**Or install from source (for latest version)**:
 
 ```bash
 git clone https://github.com/unitreerobotics/unitree_sdk2_python.git
 cd unitree_sdk2_python
 pip install -e .
 ```
+
+**Note**: The application will run in simulation mode if the SDK is not installed. This is perfect for testing the UI without a robot.
 
 ### 4. Install Additional Dependencies (Windows)
 
@@ -100,13 +105,20 @@ pipwin install pyaudio
 
 ## Configuration
 
-### Robot Connection
+### Robot Connection (Physical Hardware)
+
+**Important**: See [HARDWARE_SETUP.md](HARDWARE_SETUP.md) for complete setup instructions including:
+- Network configuration
+- SDK installation on Windows
+- Robot activation procedure
+- Troubleshooting guide
 
 By default, the application connects to the robot at `192.168.123.164`. To change this:
 
-1. Open `src/robot/g1_controller.py`
-2. Modify the `robot_ip` parameter in the `G1Controller` constructor
-3. Or pass the IP address when initializing
+1. Edit `config.json` and update the `ip_address` field
+2. Or open `src/robot/g1_controller.py` and modify the `robot_ip` parameter
+
+**Network Interface**: Windows users must configure the correct network interface name in `config.json` or `src/robot/g1_controller.py` (line 63)
 
 ### Camera Settings
 
@@ -208,11 +220,13 @@ This is useful for:
 **Problem**: Cannot connect to robot
 
 **Solutions**:
-1. Verify robot is powered on
-2. Check network connection (ping 192.168.123.164)
-3. Ensure robot IP is correct
-4. Check firewall settings
-5. Verify Unitree SDK is installed
+1. Verify robot is powered on and fully booted (1-2 minutes)
+2. Check network connection: `ping 192.168.123.164`
+3. Ensure robot is activated via controller (L1+A, then L1+UP)
+4. Verify correct network interface name in config (Windows: use `ipconfig /all`)
+5. Check firewall settings aren't blocking Python
+6. Verify Unitree SDK is installed: `pip list | grep unitree`
+7. **See [HARDWARE_SETUP.md](HARDWARE_SETUP.md) for detailed troubleshooting**
 
 ### Video Feed Issues
 
@@ -307,18 +321,42 @@ elif "new command" in command:
 
 ### G1Controller
 
-Main robot control interface.
+Main robot control interface using the official Unitree SDK2.
 
 ```python
 from src.robot import G1Controller
 
+# Initialize controller
 robot = G1Controller(robot_ip="192.168.123.164")
+
+# Connect to robot (initializes LocoClient, AudioClient, etc.)
 robot.connect()
-robot.stand_up()
-robot.walk(velocity_x=0.3, velocity_y=0.0, yaw_rate=0.0)
-robot.stop()
+
+# Basic motions (using LocoClient)
+robot.stand_up()           # Squat2StandUp()
+robot.sit_down()           # StandUp2Squat()
+robot.walk(0.3, 0.0, 0.0)  # Move(vx, vy, vyaw)
+robot.run(0.6, 0.0, 0.0)   # Faster Move()
+robot.stop()               # Move(0, 0, 0)
+robot.damp()               # Damp() - motors relaxed
+
+# Additional G1 motions
+robot.high_stand()         # HighStand()
+robot.low_stand()          # LowStand()
+robot.zero_torque()        # ZeroTorque()
+
+# Gestures
+robot.wave_hand()          # WaveHand()
+robot.shake_hand()         # ShakeHand() (via arm controller)
+
+# Disconnect
 robot.disconnect()
 ```
+
+**SDK Classes Used**:
+- `LocoClient` - Locomotion control
+- `AudioClient` - Audio/LED control
+- `G1ArmController` - Arm gesture control
 
 ### VideoFeedHandler
 
@@ -376,9 +414,17 @@ Contributions are welcome! Please:
 
 This project is provided as-is for educational and development purposes.
 
+## Documentation
+
+- **[README.md](README.md)** - Main documentation (this file)
+- **[HARDWARE_SETUP.md](HARDWARE_SETUP.md)** - Physical robot setup guide
+- **[QUICKSTART.md](QUICKSTART.md)** - 5-minute quick start
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history
+
 ## Acknowledgments
 
 - **Unitree Robotics**: For the G1 EDU robot and SDK
+- **unitree_sdk2_python**: Official Python SDK for G1 control
 - **CustomTkinter**: For the modern GUI framework
 - **OpenCV**: For video processing
 - **Open3D**: For 3D visualization
@@ -386,9 +432,10 @@ This project is provided as-is for educational and development purposes.
 ## Support
 
 For issues and questions:
-- Open an issue on GitHub
-- Check Unitree documentation: https://support.unitree.com
-- Review SDK documentation: https://github.com/unitreerobotics/unitree_sdk2_python
+- **Hardware Setup**: See [HARDWARE_SETUP.md](HARDWARE_SETUP.md)
+- **Application Issues**: Open an issue on GitHub
+- **Unitree SDK**: https://github.com/unitreerobotics/unitree_sdk2_python
+- **Official Docs**: https://support.unitree.com/home/en/G1_developer
 
 ## Roadmap
 

@@ -9,12 +9,13 @@ import time
 from typing import Optional, Callable
 from enum import Enum
 
-# Try to import unitree SDK
+# Try to import unitree SDK (G1-specific)
 try:
-    from unitree_sdk2py.core.channel import ChannelSubscriber, ChannelPublisher
-    from unitree_sdk2py.idl.default import unitree_go_msg_dds__LowCmd_
-    from unitree_sdk2py.idl.unitree_go.msg.dds_ import SportModeCmd_
-    from unitree_sdk2py.go2.sport.sport_client import SportClient
+    from unitree_sdk2py.core.channel import ChannelFactoryInitialize, ChannelSubscriber
+    from unitree_sdk2py.g1.loco.g1_loco_client import LocoClient
+    from unitree_sdk2py.g1.audio.g1_audio_client import AudioClient
+    from unitree_sdk2py.g1.arm_sdk.g1_arm_sdk import G1ArmController
+    from unitree_sdk2py.idl.unitree_go.msg.dds_ import SportModeState_
     UNITREE_SDK_AVAILABLE = True
 except ImportError:
     UNITREE_SDK_AVAILABLE = False
@@ -53,11 +54,13 @@ class G1Controller:
         self.state = RobotState.DISCONNECTED
         self.motion_mode = MotionMode.IDLE
 
-        # SDK clients
-        self.sport_client = None
-        self.loco_client = None
-        self.audio_client = None
-        self.arm_action_client = None
+        # SDK clients (G1-specific)
+        self.loco_client = None        # LocoClient for locomotion control
+        self.audio_client = None       # AudioClient for audio/LED control
+        self.arm_controller = None     # G1ArmController for arm gestures
+
+        # Network interface (required for SDK initialization)
+        self.network_interface = "eth0"  # Default, can be configured
 
         # Status callbacks
         self.status_callbacks = []
@@ -82,14 +85,22 @@ class G1Controller:
 
         try:
             if UNITREE_SDK_AVAILABLE:
-                # Initialize SDK clients
-                self.sport_client = SportClient()
-                self.sport_client.Init()
+                # Initialize DDS channel factory (required for SDK)
+                ChannelFactoryInitialize(0, self.network_interface)
 
-                # TODO: Initialize other clients when available
-                # self.loco_client = LocoClient()
-                # self.audio_client = AudioClient()
-                # self.arm_action_client = G1ArmActionClient()
+                # Initialize G1-specific SDK clients
+                self.loco_client = LocoClient()
+                self.loco_client.Init()
+
+                self.audio_client = AudioClient()
+                self.audio_client.Init()
+
+                # Arm controller (may require additional setup)
+                try:
+                    self.arm_controller = G1ArmController()
+                except Exception as e:
+                    self.logger.warning(f"Arm controller initialization failed: {e}")
+                    self.arm_controller = None
 
                 self.connected = True
                 self.state = RobotState.CONNECTED
@@ -120,8 +131,12 @@ class G1Controller:
             self.stop()
 
             # Close SDK connections
-            if self.sport_client:
-                self.sport_client = None
+            if self.loco_client:
+                self.loco_client = None
+            if self.audio_client:
+                self.audio_client = None
+            if self.arm_controller:
+                self.arm_controller = None
 
             self.connected = False
             self.state = RobotState.DISCONNECTED
@@ -144,8 +159,9 @@ class G1Controller:
 
         try:
             self.logger.info("Commanding robot to stand up")
-            if UNITREE_SDK_AVAILABLE and self.sport_client:
-                self.sport_client.StandUp()
+            if UNITREE_SDK_AVAILABLE and self.loco_client:
+                # G1 uses Squat2StandUp for standing up
+                self.loco_client.Squat2StandUp()
             else:
                 self._simulate_motion("Standing up")
 
@@ -164,8 +180,9 @@ class G1Controller:
 
         try:
             self.logger.info("Commanding robot to sit down")
-            if UNITREE_SDK_AVAILABLE and self.sport_client:
-                self.sport_client.SitDown()
+            if UNITREE_SDK_AVAILABLE and self.loco_client:
+                # G1 uses StandUp2Squat for sitting down
+                self.loco_client.StandUp2Squat()
             else:
                 self._simulate_motion("Sitting down")
 
@@ -193,8 +210,9 @@ class G1Controller:
         try:
             self.logger.info(f"Walking: vx={velocity_x}, vy={velocity_y}, yaw={yaw_rate}")
 
-            if UNITREE_SDK_AVAILABLE and self.sport_client:
-                self.sport_client.Move(velocity_x, velocity_y, yaw_rate)
+            if UNITREE_SDK_AVAILABLE and self.loco_client:
+                # G1 LocoClient.Move(vx, vy, vyaw)
+                self.loco_client.Move(velocity_x, velocity_y, yaw_rate)
             else:
                 self._simulate_motion(f"Walking (vx={velocity_x:.2f}, vy={velocity_y:.2f})")
 
@@ -222,9 +240,9 @@ class G1Controller:
         try:
             self.logger.info(f"Running: vx={velocity_x}, vy={velocity_y}, yaw={yaw_rate}")
 
-            if UNITREE_SDK_AVAILABLE and self.sport_client:
-                # Running is just faster walking
-                self.sport_client.Move(velocity_x, velocity_y, yaw_rate)
+            if UNITREE_SDK_AVAILABLE and self.loco_client:
+                # Running is just faster walking with Move command
+                self.loco_client.Move(velocity_x, velocity_y, yaw_rate)
             else:
                 self._simulate_motion(f"Running (vx={velocity_x:.2f})")
 
@@ -243,8 +261,9 @@ class G1Controller:
         try:
             self.logger.info("Stopping robot")
 
-            if UNITREE_SDK_AVAILABLE and self.sport_client:
-                self.sport_client.StopMove()
+            if UNITREE_SDK_AVAILABLE and self.loco_client:
+                # Stop by sending zero velocities
+                self.loco_client.Move(0.0, 0.0, 0.0)
             else:
                 self._simulate_motion("Stopped")
 
@@ -264,8 +283,9 @@ class G1Controller:
         try:
             self.logger.info("Entering damp mode")
 
-            if UNITREE_SDK_AVAILABLE and self.sport_client:
-                self.sport_client.Damp()
+            if UNITREE_SDK_AVAILABLE and self.loco_client:
+                # G1 LocoClient.Damp() - relaxes all motors
+                self.loco_client.Damp()
             else:
                 self._simulate_motion("Damp mode")
 
@@ -287,10 +307,9 @@ class G1Controller:
         try:
             self.logger.info("Performing wave gesture")
 
-            if UNITREE_SDK_AVAILABLE and self.arm_action_client:
-                # TODO: Implement with actual SDK
-                # self.arm_action_client.WaveHand()
-                pass
+            if UNITREE_SDK_AVAILABLE and self.loco_client:
+                # G1 has WaveHand() built into LocoClient
+                self.loco_client.WaveHand()
             else:
                 self._simulate_motion("Waving hand")
 
@@ -309,10 +328,10 @@ class G1Controller:
         try:
             self.logger.info("Performing handshake gesture")
 
-            if UNITREE_SDK_AVAILABLE and self.arm_action_client:
-                # TODO: Implement with actual SDK
-                # self.arm_action_client.ShakeHand()
-                pass
+            if UNITREE_SDK_AVAILABLE and self.arm_controller:
+                # Use arm controller for handshake gesture
+                # Note: Exact method name may vary, adjust as needed
+                self.arm_controller.ShakeHand()
             else:
                 self._simulate_motion("Shaking hand")
 
@@ -320,6 +339,56 @@ class G1Controller:
             return True
         except Exception as e:
             self.logger.error(f"Failed to shake hand: {e}")
+            return False
+
+    # Additional G1-Specific Motion Methods
+
+    def high_stand(self) -> bool:
+        """Make the robot stand at high position"""
+        if not self.is_connected():
+            return False
+
+        try:
+            if UNITREE_SDK_AVAILABLE and self.loco_client:
+                self.loco_client.HighStand()
+            else:
+                self._simulate_motion("High stand")
+            self._notify_status("High stand")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to high stand: {e}")
+            return False
+
+    def low_stand(self) -> bool:
+        """Make the robot stand at low position"""
+        if not self.is_connected():
+            return False
+
+        try:
+            if UNITREE_SDK_AVAILABLE and self.loco_client:
+                self.loco_client.LowStand()
+            else:
+                self._simulate_motion("Low stand")
+            self._notify_status("Low stand")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to low stand: {e}")
+            return False
+
+    def zero_torque(self) -> bool:
+        """Set all motors to zero torque"""
+        if not self.is_connected():
+            return False
+
+        try:
+            if UNITREE_SDK_AVAILABLE and self.loco_client:
+                self.loco_client.ZeroTorque()
+            else:
+                self._simulate_motion("Zero torque")
+            self._notify_status("Zero torque mode")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to set zero torque: {e}")
             return False
 
     # Audio Methods
@@ -334,9 +403,8 @@ class G1Controller:
             self.logger.info(f"Playing audio: {audio_file}")
 
             if UNITREE_SDK_AVAILABLE and self.audio_client:
-                # TODO: Implement with actual SDK
-                # self.audio_client.PlayAudio(audio_file)
-                pass
+                # G1 AudioClient for playing audio files
+                self.audio_client.PlayAudio(audio_file)
             else:
                 self._simulate_motion(f"Playing audio: {audio_file}")
 

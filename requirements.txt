@@ -1,8 +1,10 @@
 # Unitree G1 Windows Control Application Dependencies
 
-# Unitree SDK
-# Note: Install unitree_sdk2_python from: pip install unitree_sdk2py
-unitree_sdk2py>=1.0.0
+# Unitree SDK (G1-specific)
+# Note: Install from PyPI or from source
+# PyPI: pip install unitree-sdk2py
+# Source: https://github.com/unitreerobotics/unitree_sdk2_python
+unitree-sdk2py>=1.0.0
 
 # GUI Framework
 customtkinter>=5.2.0
