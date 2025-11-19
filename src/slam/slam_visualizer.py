@@ -13,12 +13,29 @@ matplotlib.use('Agg')  # Non-interactive backend
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
+# Import LiDAR client
+try:
+    from .lidar_client import LidarClient
+    LIDAR_CLIENT_AVAILABLE = True
+except ImportError:
+    try:
+        from src.slam.lidar_client import LidarClient
+        LIDAR_CLIENT_AVAILABLE = True
+    except ImportError:
+        LIDAR_CLIENT_AVAILABLE = False
+        print("[SLAM] LidarClient not available")
+
 
 class SLAMVisualizer:
     """Visualizes SLAM data from G1 LiDAR"""
 
-    def __init__(self):
-        """Initialize SLAM visualizer"""
+    def __init__(self, lidar_ip: str = "192.168.123.120"):
+        """
+        Initialize SLAM visualizer
+
+        Args:
+            lidar_ip: IP address of the L1 LiDAR
+        """
         self.logger = logging.getLogger(__name__)
 
         # SLAM data
@@ -39,6 +56,10 @@ class SLAMVisualizer:
         # Initialize occupancy grid
         self.occupancy_grid = np.zeros((self.grid_size, self.grid_size), dtype=np.float32)
 
+        # LiDAR client
+        self.lidar_ip = lidar_ip
+        self.lidar_client = None
+
         # Simulation data
         self.simulation_mode = True
         self.sim_update_thread = None
@@ -49,14 +70,43 @@ class SLAMVisualizer:
         self.logger.info("Starting SLAM visualizer")
         self.is_running = True
 
+        # Try to connect to real LiDAR first
+        if LIDAR_CLIENT_AVAILABLE:
+            self.logger.info(f"Attempting to connect to L1 LiDAR at {self.lidar_ip}")
+            self.lidar_client = LidarClient(lidar_ip=self.lidar_ip)
+
+            if self.lidar_client.check_connectivity():
+                self.logger.info("LiDAR is reachable, connecting...")
+                if self.lidar_client.connect():
+                    self.simulation_mode = False
+                    # Register callback for point cloud updates
+                    self.lidar_client.register_callback(self._on_lidar_point_cloud)
+                    self.logger.info("Connected to real LiDAR!")
+                else:
+                    self.logger.warning("Failed to connect to LiDAR, using simulation")
+                    self.lidar_client = None
+            else:
+                self.logger.warning(f"LiDAR not reachable at {self.lidar_ip}, using simulation")
+                self.lidar_client = None
+
         if self.simulation_mode:
+            self.logger.info("Running in simulation mode")
             self.sim_update_thread = threading.Thread(target=self._simulation_loop, daemon=True)
             self.sim_update_thread.start()
+
+    def _on_lidar_point_cloud(self, point_cloud: np.ndarray):
+        """Callback when new point cloud data arrives from LiDAR"""
+        self.update_point_cloud(point_cloud)
 
     def stop(self):
         """Stop SLAM visualization"""
         self.logger.info("Stopping SLAM visualizer")
         self.is_running = False
+
+        # Disconnect LiDAR client
+        if self.lidar_client:
+            self.lidar_client.disconnect()
+            self.lidar_client = None
 
         if self.sim_update_thread:
             self.sim_update_thread.join(timeout=2.0)

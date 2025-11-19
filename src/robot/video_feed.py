@@ -1,6 +1,7 @@
 """
 Video Feed Handler for Unitree G1
 Manages camera streams and video display
+Supports Intel RealSense D435i depth camera
 """
 
 import cv2
@@ -9,6 +10,15 @@ import logging
 import threading
 import time
 from typing import Optional, Callable
+
+# Try to import RealSense SDK
+try:
+    import pyrealsense2 as rs
+    REALSENSE_AVAILABLE = True
+    print("[Camera] Intel RealSense SDK loaded successfully!")
+except ImportError:
+    REALSENSE_AVAILABLE = False
+    print("[Camera] Intel RealSense SDK not available (pip install pyrealsense2)")
 
 
 class VideoFeedHandler:
@@ -41,6 +51,13 @@ class VideoFeedHandler:
         self.camera_height = 720
         self.camera_fps = 30
 
+        # RealSense specific
+        self.rs_pipeline = None
+        self.rs_config = None
+        self.rs_align = None
+        self.depth_frame = None
+        self.use_realsense = False
+
     def start_stream(self, camera_index: int = 0) -> bool:
         """
         Start video streaming
@@ -58,15 +75,39 @@ class VideoFeedHandler:
         try:
             self.logger.info(f"Starting video stream from camera {camera_index}")
 
-            # Try to connect to robot camera via RTSP or other protocol
-            # For simulation, we'll create a dummy video source
-            stream_url = self._get_stream_url(camera_index)
+            # Try Intel RealSense first (G1 has D435i)
+            if REALSENSE_AVAILABLE:
+                try:
+                    self.logger.info("Attempting to connect to Intel RealSense D435i...")
+                    self.rs_pipeline = rs.pipeline()
+                    self.rs_config = rs.config()
 
-            self.camera_stream = cv2.VideoCapture(stream_url)
+                    # Configure streams
+                    self.rs_config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
+                    self.rs_config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
 
-            if not self.camera_stream.isOpened():
-                self.logger.warning("Could not open robot camera, using simulation")
-                self.camera_stream = None
+                    # Start pipeline
+                    profile = self.rs_pipeline.start(self.rs_config)
+
+                    # Create align object for depth to color alignment
+                    self.rs_align = rs.align(rs.stream.color)
+
+                    self.use_realsense = True
+                    self.logger.info("Intel RealSense D435i connected successfully!")
+
+                except Exception as e:
+                    self.logger.warning(f"Failed to connect to RealSense: {e}")
+                    self.rs_pipeline = None
+                    self.use_realsense = False
+
+            # Try OpenCV camera as fallback
+            if not self.use_realsense:
+                stream_url = self._get_stream_url(camera_index)
+                self.camera_stream = cv2.VideoCapture(stream_url)
+
+                if not self.camera_stream.isOpened():
+                    self.logger.warning("Could not open robot camera, using simulation")
+                    self.camera_stream = None
 
             self.is_streaming = True
 
@@ -79,6 +120,8 @@ class VideoFeedHandler:
 
         except Exception as e:
             self.logger.error(f"Failed to start video stream: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
     def stop_stream(self):
@@ -88,6 +131,10 @@ class VideoFeedHandler:
 
         if self.stream_thread:
             self.stream_thread.join(timeout=2.0)
+
+        if self.rs_pipeline:
+            self.rs_pipeline.stop()
+            self.rs_pipeline = None
 
         if self.camera_stream:
             self.camera_stream.release()
@@ -118,25 +165,46 @@ class VideoFeedHandler:
 
         while self.is_streaming:
             try:
-                if self.camera_stream and self.camera_stream.isOpened():
-                    ret, frame = self.camera_stream.read()
+                frame = None
 
-                    if ret and frame is not None:
-                        with self.frame_lock:
-                            self.current_frame = frame.copy()
-                        self._notify_frame(frame)
-                    else:
-                        # Generate simulation frame
-                        frame = self._generate_simulation_frame(frame_count)
-                        with self.frame_lock:
-                            self.current_frame = frame
-                        self._notify_frame(frame)
-                else:
-                    # Generate simulation frame
+                # Try RealSense first
+                if self.use_realsense and self.rs_pipeline:
+                    try:
+                        # Wait for frames
+                        frames = self.rs_pipeline.wait_for_frames(timeout_ms=1000)
+
+                        # Align depth to color
+                        aligned_frames = self.rs_align.process(frames)
+
+                        # Get color frame
+                        color_frame = aligned_frames.get_color_frame()
+                        depth_frame = aligned_frames.get_depth_frame()
+
+                        if color_frame:
+                            frame = np.asanyarray(color_frame.get_data())
+
+                            # Store depth frame for potential use
+                            if depth_frame:
+                                with self.frame_lock:
+                                    self.depth_frame = np.asanyarray(depth_frame.get_data())
+
+                    except Exception as e:
+                        self.logger.debug(f"RealSense frame error: {e}")
+
+                # Try OpenCV camera
+                elif self.camera_stream and self.camera_stream.isOpened():
+                    ret, frame = self.camera_stream.read()
+                    if not ret:
+                        frame = None
+
+                # Generate simulation frame if no real camera
+                if frame is None:
                     frame = self._generate_simulation_frame(frame_count)
-                    with self.frame_lock:
-                        self.current_frame = frame
-                    self._notify_frame(frame)
+
+                # Update current frame and notify callbacks
+                with self.frame_lock:
+                    self.current_frame = frame.copy()
+                self._notify_frame(frame)
 
                 frame_count += 1
                 time.sleep(1.0 / self.camera_fps)  # Limit to camera FPS
@@ -144,6 +212,18 @@ class VideoFeedHandler:
             except Exception as e:
                 self.logger.error(f"Error in stream loop: {e}")
                 time.sleep(0.1)
+
+    def get_depth_frame(self) -> Optional[np.ndarray]:
+        """
+        Get the current depth frame (RealSense only)
+
+        Returns:
+            Optional[np.ndarray]: Depth frame or None
+        """
+        with self.frame_lock:
+            if self.depth_frame is not None:
+                return self.depth_frame.copy()
+        return None
 
     def _generate_simulation_frame(self, frame_count: int) -> np.ndarray:
         """

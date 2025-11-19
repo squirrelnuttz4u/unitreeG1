@@ -47,6 +47,12 @@ matplotlib>=3.7.0
 # If you get 404 errors, skip this package - it's not critical
 # open3d>=0.17.0  # Commented out - install only if needed
 
+# Intel RealSense Camera (G1 has D435i) - OPTIONAL
+# Needed for depth camera access on the G1 robot
+# On Ubuntu: sudo apt install librealsense2-dkms librealsense2-utils
+# Then: pip install pyrealsense2
+# pyrealsense2>=2.50.0  # Commented out - install manually if needed
+
 # Additional Utilities - OPTIONAL
 # scipy is optional, only used for advanced features
 # scipy>=1.11.0  # Commented out - install only if needed
